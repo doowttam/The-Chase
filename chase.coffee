@@ -63,9 +63,11 @@ class Map
     @context.fillStyle = "red"
     @context.fillRect( 0, 0, @canvas.width, 100 )
 
-    @context.fillStyle = "black"
-    @context.fillRect( 450, 70, 100, 30 )
+    distance = -175 - y
 
+    if  Math.abs(distance - 100) <= ( @canvas.height / 2 ) + 30
+      @context.fillStyle = "black"
+      @context.fillRect( 450, @canvas.height / 2 + distance, 100, 30 )
 
 
 # Inspired by http://nokarma.org/2011/02/27/javascript-game-development-keyboard-input/index.html
