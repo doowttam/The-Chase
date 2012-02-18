@@ -48,12 +48,27 @@ class Map
 
   draw: (x, y) ->
     offset = (y % @lineGap) * -1
+
+    offset += 100
+
+    count = 0
     for line in [offset..@canvas.height] by @lineGap
+      @context.beginPath()
+      @context.lineWidth = ++count
       @context.moveTo(0, line)
       @context.lineTo(@canvas.width, line)
-    @context.stroke()
+      @context.closePath()
+      @context.stroke()
 
-# Pulled from http://nokarma.org/2011/02/27/javascript-game-development-keyboard-input/index.html
+    @context.fillStyle = "red"
+    @context.fillRect( 0, 0, @canvas.width, 100 )
+
+    @context.fillStyle = "black"
+    @context.fillRect( 450, 70, 100, 30 )
+
+
+
+# Inspired by http://nokarma.org/2011/02/27/javascript-game-development-keyboard-input/index.html
 class Key
   pressed: {}
 
@@ -96,9 +111,11 @@ class Elle
 
   draw: ->
     @map.draw @x, @y
+    @context.fillStyle = "orange"
     @context.fillRect @x, ( @canvas.height - @size ) / 2, @size, @size
 
 
 window.onload = ->
   chase = new Chase window.document, window
+  chase.drawFrame()
 
