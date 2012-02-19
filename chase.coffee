@@ -55,12 +55,27 @@ class Building
 class Map
   constructor: (@context, @canvas) ->
 
+
+  furthestY: 0
   lineGap: 20
+  horizon: 100
+
+  buildings: []
+
+  getHorizonY: (y) ->
+    distanceToHorizon = @canvas.height / 2 - @horizon
+    return y - distanceToHorizon
+
+  addNewBuildings: (y)->
+    if Math.random() < 0.01
+      randX = Math.ceil Math.random() * @canvas.width
+      console.info "new building at #{randX}, #{y}"
+      @buildings.push new Building randX, y, 100, 30
 
   draw: (x, y) ->
     offset = (y % @lineGap) * -1
 
-    offset += 100
+    offset += @horizon
 
     count = 0
     for line in [offset..@canvas.height] by @lineGap
@@ -71,22 +86,27 @@ class Map
       @context.closePath()
       @context.stroke()
 
-    building = new Building 100, -55, 100, 30
+    # we're moving ahead
+    if @furthestY > y
+      @furthestY = y
+      horizonY = @getHorizonY y
+      @addNewBuildings horizonY
 
-    distance = building.y - y
+    for building in @buildings
+      distance = building.y - y
 
-    if  Math.abs(distance - 100) <= ( @canvas.height / 2 ) + building.height
-      currentY = ( @canvas.height / 2 ) + distance
+      if  Math.abs(distance - @horizon) <= ( @canvas.height / 2 ) + building.height
+        currentY = ( @canvas.height / 2 ) + distance
 
-      if distance > -100
-        sizeMult = (distance + 100) / 200
-      else
-        sizeMult = 0
+        if distance > -@horizon
+          sizeMult = (distance + @horizon) / 200
+        else
+          sizeMult = 0
 
-      building.draw @context, building.x, currentY, sizeMult
+        building.draw @context, building.x, currentY, sizeMult
 
     @context.fillStyle = "red"
-    @context.fillRect 0, 0, @canvas.width, 100
+    @context.fillRect 0, 0, @canvas.width, @horizon
 
 
 # Inspired by http://nokarma.org/2011/02/27/javascript-game-development-keyboard-input/index.html
