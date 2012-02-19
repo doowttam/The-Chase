@@ -41,6 +41,17 @@ class Chase
     else
       @play()
 
+class Building
+  constructor: (@x, @y, @width, @height) ->
+
+  draw: (context, drawX, drawY, sizeMult) ->
+    # draw a negative height, so it draws upwards
+    w = @width * sizeMult
+    h = @height * sizeMult * -1
+
+    context.fillStyle = "black"
+    context.fillRect drawX, drawY, w, h
+
 class Map
   constructor: (@context, @canvas) ->
 
@@ -60,24 +71,22 @@ class Map
       @context.closePath()
       @context.stroke()
 
-    distance = -55 - y
+    building = new Building 100, -55, 100, 30
 
-    if  Math.abs(distance - 100) <= ( @canvas.height / 2 ) + 30
-      currentY = @canvas.height / 2 + distance
+    distance = building.y - y
+
+    if  Math.abs(distance - 100) <= ( @canvas.height / 2 ) + building.height
+      currentY = ( @canvas.height / 2 ) + distance
 
       if distance > -100
-        sizeMult = (distance + 100) / 100
+        sizeMult = (distance + 100) / 200
       else
         sizeMult = 0
 
-      width  = 100 * sizeMult
-      height = 30 * sizeMult
-
-      @context.fillStyle = "black"
-      @context.fillRect( 100, currentY, width, -height )
+      building.draw @context, building.x, currentY, sizeMult
 
     @context.fillStyle = "red"
-    @context.fillRect( 0, 0, @canvas.width, 100 )
+    @context.fillRect 0, 0, @canvas.width, 100
 
 
 # Inspired by http://nokarma.org/2011/02/27/javascript-game-development-keyboard-input/index.html
