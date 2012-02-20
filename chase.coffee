@@ -139,12 +139,10 @@ class Elle
     topLeftX = ( @canvas.width - @size ) / 2;
     topLeftY = ( @canvas.height - @size ) / 2;
 
-    if @key.isDown @key.codes.LEFT
-      if @x > 0
-        @x = @x - 1
-    if @key.isDown @key.codes.RIGHT
-      if @x < @canvas.width
-        @x = @x + 1
+    if @key.isDown(@key.codes.LEFT) and @x > 0
+      @x = @x - 1
+    if @key.isDown(@key.codes.RIGHT) and @x < @canvas.width - @size
+      @x = @x + 1
     if @key.isDown @key.codes.UP
       @y = @y - 1
     if @key.isDown @key.codes.DOWN
