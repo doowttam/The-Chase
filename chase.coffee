@@ -44,13 +44,15 @@ class Chase
 class Building
   constructor: (@x, @y, @width, @height) ->
 
-  draw: (context, drawX, drawY, sizeMult) ->
-    # draw a negative height, so it draws upwards
-    w = @width * sizeMult
-    h = @height * sizeMult * -1
+  sizeMult: 1
 
+  effectiveWidth: -> @width * @sizeMult
+  effectiveHeight: -> @height * @sizeMult
+
+  draw: (context, drawX, drawY) ->
+    # draw a negative height, so it draws upwards
     context.fillStyle = "black"
-    context.fillRect drawX, drawY, w, h
+    context.fillRect drawX, drawY, @effectiveWidth(), @effectiveHeight() * -1
 
 class Map
   constructor: (@context, @canvas) ->
@@ -103,10 +105,29 @@ class Map
         else
           sizeMult = 0
 
-        building.draw @context, building.x, currentY, sizeMult
+        # Update size multiplier
+        building.sizeMult = sizeMult
+
+        building.draw @context, building.x, currentY
 
     @context.fillStyle = "red"
     @context.fillRect 0, 0, @canvas.width, @horizon
+
+  canMoveUp: (topLeftX, topRightX, y) ->
+    for building in @buildings
+      distance = building.y - y
+
+      # if building's y is within 1 building's height
+      if  Math.abs(distance) <= building.height
+        if topLeftX >= building.x and topLeftX <= building.x + building.effectiveWidth()
+          if y  >= building.y - building.height and y <= building.y
+            return false
+        if topRightX >= building.x and topRightX <= building.x + building.effectiveWidth()
+          if y >= building.y - building.height and y <= building.y
+            return false
+
+    return true
+
 
 
 # Inspired by http://nokarma.org/2011/02/27/javascript-game-development-keyboard-input/index.html
@@ -143,9 +164,9 @@ class Elle
       @x = @x - 1
     if @key.isDown(@key.codes.RIGHT) and @x < @canvas.width - @size
       @x = @x + 1
-    if @key.isDown @key.codes.UP
+    if @key.isDown(@key.codes.UP) and @map.canMoveUp(@x, @x + @size, @y - (@size / 2))
       @y = @y - 1
-    if @key.isDown @key.codes.DOWN
+    if @key.isDown(@key.codes.DOWN)
       @y = @y + 1
 
   draw: ->
