@@ -41,6 +41,23 @@ class Chase
     else
       @play()
 
+class Entity
+  #  x1, y1 ---- x2, y1
+  #  |
+  #  |
+  #  x2, y1 ---- x2, y2
+
+  constructor: ( x, y, @size ) ->
+    @x1: x
+    @x2: x + @size
+    @y1: y
+    @y2: y + @size
+
+  collidesWith: (entity) ->
+    if @x1 <= entity.x2 and @x2 >= entity.x1 and @y1 <= entity.y2 and @y2 >= entity.y1
+      return true
+    return false
+
 class Building
   constructor: (@x, @y, @width, @height) ->
 
@@ -57,7 +74,6 @@ class Building
 class Map
   constructor: (@context, @canvas) ->
 
-
   furthestY: 0
   lineGap: 20
   horizon: 100
@@ -71,7 +87,7 @@ class Map
   addNewBuildings: (y)->
     if Math.random() < 0.01
       randX = Math.ceil Math.random() * @canvas.width
-      console.info "new building at #{randX}, #{y}"
+      console.log "new building at #{randX}, #{y}"
       @buildings.push new Building randX, y, 100, 30
 
   draw: (x, y) ->
@@ -173,7 +189,6 @@ class Elle
     @map.draw @x, @y
     @context.fillStyle = "orange"
     @context.fillRect @x, ( @canvas.height - @size ) / 2, @size, @size
-
 
 window.onload = ->
   chase = new Chase window.document, window
