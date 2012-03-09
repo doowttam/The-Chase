@@ -47,24 +47,37 @@ class Entity
   #  |
   #  x2, y1 ---- x2, y2
 
-  constructor: ( x, y, @size ) ->
-    @x1: x
-    @x2: x + @size
-    @y1: y
-    @y2: y + @size
+  constructor: ( @x, @y, @width, @height ) ->
+
+  getBounds: ->
+    x1: @x
+    y1: @y
+    x2: @x + @width
+    y2: @y + @height
 
   collidesWith: (entity) ->
-    if @x1 <= entity.x2 and @x2 >= entity.x1 and @y1 <= entity.y2 and @y2 >= entity.y1
+    myBounds    = @getBounds()
+    theirBounds = entity.getBounds()
+
+    if ( myBounds.x1 <= theirBounds.x2 and
+         myBounds.x2 >= theirBounds.x1 and
+         myBounds.y1 <= their.y2 and
+         myBounds.y2 >= their.y1 )
       return true
     return false
 
-class Building
-  constructor: (@x, @y, @width, @height) ->
-
+class Building extends Entity
   sizeMult: 1
 
   effectiveWidth: -> @width * @sizeMult
   effectiveHeight: -> @height * @sizeMult
+
+  # Bounds are kind of confusing here since we anchor the building at its bottom left
+  getBounds: ->
+    x1: @x
+    y1: @y - @effectiveHeight()
+    x2: @x + @effectiveWidth()
+    y2: @y
 
   draw: (context, drawX, drawY) ->
     # draw a negative height, so it draws upwards
