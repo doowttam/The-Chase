@@ -142,19 +142,6 @@ class Map
     @context.fillStyle = "red"
     @context.fillRect 0, 0, @canvas.width, @horizon
 
-  canMoveUp: (topLeftX, topRightX, y) ->
-    for building in @buildings
-      distance = building.y - y
-
-      # if building's y is within 1 building's height
-      if  Math.abs(distance) <= building.height
-        if topLeftX >= building.x and topLeftX <= building.x + building.effectiveWidth()
-          if y  >= building.y - building.height and y <= building.y
-            return false
-        if topRightX >= building.x and topRightX <= building.x + building.effectiveWidth()
-          if y >= building.y - building.height and y <= building.y
-            return false
-
     return true
 
 
@@ -178,12 +165,13 @@ class Key
   onKeyUp: (event) =>
     delete @pressed[event.keyCode]
 
-class Elle
+class Elle extends Entity
   constructor: (@context, @canvas, @map, @key) ->
-    @x = ( @canvas.width - @size ) / 2
+    @x = ( @canvas.width - @width ) / 2
     @y = 0
 
-  size: 16
+  width: 16
+  height: 16
 
   move: ->
     topLeftX = ( @canvas.width - @size ) / 2;
@@ -191,9 +179,9 @@ class Elle
 
     if @key.isDown(@key.codes.LEFT) and @x > 0
       @x = @x - 1
-    if @key.isDown(@key.codes.RIGHT) and @x < @canvas.width - @size
+    if @key.isDown(@key.codes.RIGHT) and @x < @canvas.width - @width
       @x = @x + 1
-    if @key.isDown(@key.codes.UP) and @map.canMoveUp(@x, @x + @size, @y - (@size / 2))
+    if @key.isDown(@key.codes.UP)
       @y = @y - 1
     if @key.isDown(@key.codes.DOWN)
       @y = @y + 1
@@ -201,7 +189,7 @@ class Elle
   draw: ->
     @map.draw @x, @y
     @context.fillStyle = "orange"
-    @context.fillRect @x, ( @canvas.height - @size ) / 2, @size, @size
+    @context.fillRect @x, ( @canvas.height - @height ) / 2, @width, @height
 
 window.onload = ->
   chase = new Chase window.document, window
