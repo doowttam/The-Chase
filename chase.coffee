@@ -129,10 +129,11 @@ class Map
       if  Math.abs(distance - @horizon) <= ( @canvas.height / 2 ) + building.height
         currentY = ( @canvas.height / 2 ) + distance
 
-        if distance > -@horizon
-          sizeMult = (distance + @horizon) / 200
+        distanceToHorizon = @canvas.height / 2 - @horizon
+        if distance < 0
+          sizeMult = 1 - ( 1 / distanceToHorizon ) * Math.abs(distance)
         else
-          sizeMult = 0
+          sizeMult = 1
 
         # Update size multiplier
         building.sizeMult = sizeMult
@@ -143,8 +144,6 @@ class Map
     @context.fillRect 0, 0, @canvas.width, @horizon
 
     return true
-
-
 
 # Inspired by http://nokarma.org/2011/02/27/javascript-game-development-keyboard-input/index.html
 class Key
