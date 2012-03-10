@@ -93,8 +93,8 @@ class Map
 
   buildings: []
 
-  getHorizonY: (y) ->
-    distanceToHorizon = @canvas.height / 2 - @horizon
+  getHorizonY: (y, drawY) ->
+    distanceToHorizon = drawY - @horizon
     return y - distanceToHorizon
 
   addNewBuildings: (y)->
@@ -103,7 +103,7 @@ class Map
       console.log "new building at #{randX}, #{y}"
       @buildings.push new Building randX, y, 100, 30
 
-  draw: (x, y) ->
+  draw: (x, y, drawY) ->
     offset = (y % @lineGap) * -1
 
     offset += @horizon
@@ -120,16 +120,17 @@ class Map
     # we're moving ahead
     if @furthestY > y
       @furthestY = y
-      horizonY = @getHorizonY y
+      horizonY = @getHorizonY y, drawY
       @addNewBuildings horizonY
 
     for building in @buildings
       distance = building.y - y
 
-      if  Math.abs(distance - @horizon) <= ( @canvas.height / 2 ) + building.height
-        currentY = ( @canvas.height / 2 ) + distance
+      if  Math.abs(distance - @horizon) <= ( drawY ) + building.height
+        currentY = ( drawY ) + distance
 
-        distanceToHorizon = @canvas.height / 2 - @horizon
+        # Lie a little bit, it's slightly past the horizon
+        distanceToHorizon = drawY - @horizon + 15
         if distance < 0
           sizeMult = 1 - ( 1 / distanceToHorizon ) * Math.abs(distance)
         else
@@ -168,14 +169,12 @@ class Elle extends Entity
   constructor: (@context, @canvas, @map, @key) ->
     @x = ( @canvas.width - @width ) / 2
     @y = 0
+    @drawY = (@canvas.height - @height ) / 2
 
   width: 16
   height: 16
 
   move: ->
-    topLeftX = ( @canvas.width - @size ) / 2;
-    topLeftY = ( @canvas.height - @size ) / 2;
-
     if @key.isDown(@key.codes.LEFT) and @x > 0
       @x = @x - 1
     if @key.isDown(@key.codes.RIGHT) and @x < @canvas.width - @width
@@ -186,9 +185,9 @@ class Elle extends Entity
       @y = @y + 1
 
   draw: ->
-    @map.draw @x, @y
+    @map.draw @x, @y, @drawY
     @context.fillStyle = "orange"
-    @context.fillRect @x, ( @canvas.height - @height ) / 2, @width, @height
+    @context.fillRect @x, @drawY, @width, @height
 
 window.onload = ->
   chase = new Chase window.document, window
