@@ -155,6 +155,7 @@ class Key
     "UP": 38
     "RIGHT": 39
     "DOWN": 40
+    "SPACE": 32
 
   isDown: (keyCode) =>
     return @pressed[keyCode]
@@ -169,10 +170,26 @@ class Elle extends Entity
   constructor: (@context, @canvas, @map, @key) ->
     @x = ( @canvas.width - @width ) / 2
     @y = 0
-    @drawY = (@canvas.height - @height ) / 2
+    @drawY = (@canvas.height + 50 ) / 2
 
   width: 16
   height: 16
+
+  jump:
+    isJumping: false
+    goingUp: true
+    height: 0
+    maxHeight: 50
+    stepHeight: ->
+      if @height < @maxHeight && @goingUp
+        @height = @height + 2
+      else if @height > 0
+        @height = @height - 2
+        @goingUp = false
+      else
+        @height = 0
+        @isJumping = false
+        @goingUp   = true
 
   move: ->
     if @key.isDown(@key.codes.LEFT) and @x > 0
@@ -183,11 +200,23 @@ class Elle extends Entity
       @y = @y - 1
     if @key.isDown(@key.codes.DOWN)
       @y = @y + 1
+    if @key.isDown(@key.codes.SPACE) && !@jump.isJumping
+      @jump.isJumping = true
 
   draw: ->
     @map.draw @x, @y, @drawY
+
+    if @jump.isJumping
+      @jump.stepHeight()
+      @context.fillStyle = "black"
+      @context.fillRect @x + 2, @drawY, @width - 4, @height - 4
+
+    position = @drawY - @jump.height
+
     @context.fillStyle = "orange"
-    @context.fillRect @x, @drawY, @width, @height
+    @context.fillRect @x, position, @width, @height
+
+
 
 window.onload = ->
   chase = new Chase window.document, window
