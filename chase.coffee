@@ -103,6 +103,10 @@ class Map
       console.log "new building at #{randX}, #{y}"
       @buildings.push new Building randX, y, 100, 30
 
+  getCloseBuildings: (bounds) ->
+    building for building in @buildings when Math.abs(bounds.y2 - building.getBounds().y2) < 10
+
+
   draw: (x, y, drawY) ->
     offset = (y % @lineGap) * -1
 
@@ -174,6 +178,7 @@ class Elle extends Entity
 
   width: 16
   height: 16
+  speed: 1
 
   jump:
     isJumping: false
@@ -191,12 +196,22 @@ class Elle extends Entity
         @isJumping = false
         @goingUp   = true
 
+  canMoveForward: ->
+    myBounds = @getBounds()
+    closeBuildings = @map.getCloseBuildings myBounds
+    for building in closeBuildings
+      bounds   = building.getBounds()
+      distance = myBounds.y2 - bounds.y2
+      if distance <= @speed and distance > 0 and myBounds.x1 < bounds.x2 and myBounds.x2 > bounds.x1
+        return false
+    return true
+
   move: ->
     if @key.isDown(@key.codes.LEFT) and @x > 0
       @x = @x - 1
     if @key.isDown(@key.codes.RIGHT) and @x < @canvas.width - @width
       @x = @x + 1
-    if @key.isDown(@key.codes.UP)
+    if @key.isDown(@key.codes.UP) && @canMoveForward()
       @y = @y - 1
     if @key.isDown(@key.codes.DOWN)
       @y = @y + 1
