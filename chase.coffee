@@ -202,7 +202,25 @@ class Elle extends Entity
     for building in closeBuildings
       bounds   = building.getBounds()
       distance = myBounds.y2 - bounds.y2
-      if distance <= @speed and distance > 0 and myBounds.x1 < bounds.x2 and myBounds.x2 > bounds.x1
+      if distance <= @speed and
+         distance > 0 and
+         myBounds.x1 < bounds.x2 and
+         myBounds.x2 > bounds.x1 and
+         myBounds.y2 - @jump.height > bounds.y1
+        return false
+    return true
+
+  canMoveBack: ->
+    myBounds = @getBounds()
+    closeBuildings = @map.getCloseBuildings myBounds
+    for building in closeBuildings
+      bounds   = building.getBounds()
+      distance = bounds.y2 - myBounds.y2
+      if distance <= @speed and
+         distance > 0 and
+         myBounds.x1 < bounds.x2 and
+         myBounds.x2 > bounds.x1 and
+         myBounds.y2 - @jump.height > bounds.y1
         return false
     return true
 
@@ -213,7 +231,7 @@ class Elle extends Entity
       @x = @x + 1
     if @key.isDown(@key.codes.UP) && @canMoveForward()
       @y = @y - 1
-    if @key.isDown(@key.codes.DOWN)
+    if @key.isDown(@key.codes.DOWN) && @canMoveBack()
       @y = @y + 1
     if @key.isDown(@key.codes.SPACE) && !@jump.isJumping
       @jump.isJumping = true
@@ -231,7 +249,12 @@ class Elle extends Entity
     @context.fillStyle = "orange"
     @context.fillRect @x, position, @width, @height
 
-
+    bounds = @getBounds()
+    @context.fillStyle = "black"
+    @context.font = "bold 12px sans-serif"
+    @context.textAlign = "left"
+    @context.textBaseline = "top"
+    @context.fillText '(' + bounds.x2 + ',' + bounds.y1 + ')', 610, 22
 
 window.onload = ->
   chase = new Chase window.document, window
