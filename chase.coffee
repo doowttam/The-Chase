@@ -25,7 +25,23 @@ class Chase
     @resetCanvas()
 
     @elle.move()
+    elleBounds = @elle.getBounds()
+
+    # draw map
+    @map.drawBG @elle.x, @elle.y, @elle.drawY
+
+    # draw building ahead
+    # FIXME: drawY isn't really right, it's more like distance to horizon for one
+    # and distance to bottom for the other, but it's a safe approximation
+    @map.drawBuildings @elle.y, @elle.drawY, elleBounds.y2 - @elle.drawY, elleBounds.y2
+
+    @map.drawHorizon()
+
+    # draw elle
     @elle.draw()
+
+    # draw buildings behind
+    @map.drawBuildings @elle.y, @elle.drawY, elleBounds.y2 + @elle.drawY, elleBounds.y2
 
   play: =>
     return if @frameInterval
@@ -45,7 +61,7 @@ class Entity
   #  x1, y1 ---- x2, y1
   #  |
   #  |
-  #  x2, y1 ---- x2, y2
+  #  x1, y2 ---- x2, y2
 
   constructor: ( @x, @y, @width, @height ) ->
 
@@ -106,7 +122,7 @@ class Map
   getCloseBuildings: (y2, speed) ->
     @buildings[point] for point in [ y2 - speed .. y2 + speed] when @buildings[point]?
 
-  draw: (x, y, drawY) ->
+  drawBG: (x, y, drawY) ->
     offset = (y % @lineGap) * -1
 
     offset += @horizon
@@ -126,9 +142,12 @@ class Map
       horizonY = @getHorizonY y, drawY
       @addNewBuildings horizonY
 
-    # FIXME: drawY isn't really right, it's more like distance to horizon for one
-    # and distance to bottom for the other, but it's a safe approximation
-    for point in [ y + drawY .. y - drawY]
+  drawHorizon: ->
+    @context.fillStyle = "red"
+    @context.fillRect 0, 0, @canvas.width, @horizon
+
+  drawBuildings: (y, drawY, lower, upper) ->
+    for point in [ lower .. upper ]
       if @buildings[point]?
         building = @buildings[point]
         distance = building.y - y
@@ -145,10 +164,6 @@ class Map
         building.sizeMult = sizeMult
         building.draw @context, building.x, currentY
 
-    @context.fillStyle = "red"
-    @context.fillRect 0, 0, @canvas.width, @horizon
-
-    return true
 
 # Inspired by http://nokarma.org/2011/02/27/javascript-game-development-keyboard-input/index.html
 class Key
@@ -237,8 +252,6 @@ class Elle extends Entity
       @jump.isJumping = true
 
   draw: ->
-    @map.draw @x, @y, @drawY
-
     if @jump.isJumping
       @jump.stepHeight()
       @context.fillStyle = "black"
