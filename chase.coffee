@@ -91,7 +91,7 @@ class Map
   lineGap: 20
   horizon: 100
 
-  buildings: []
+  buildings: {}
 
   getHorizonY: (y, drawY) ->
     distanceToHorizon = drawY - @horizon
@@ -101,11 +101,10 @@ class Map
     if Math.random() < 0.01
       randX = Math.ceil Math.random() * @canvas.width
       console.log "new building at #{randX}, #{y}"
-      @buildings.push new Building randX, y, 100, 30
+      @buildings[y] = new Building randX, y, 100, 30
 
-  getCloseBuildings: (bounds) ->
-    building for building in @buildings when Math.abs(bounds.y2 - building.getBounds().y2) < 10
-
+  getCloseBuildings: (y2, speed) ->
+    @buildings[point] for point in [ y2 - speed .. y2 + speed] when @buildings[point]?
 
   draw: (x, y, drawY) ->
     offset = (y % @lineGap) * -1
@@ -127,11 +126,13 @@ class Map
       horizonY = @getHorizonY y, drawY
       @addNewBuildings horizonY
 
-    for building in @buildings
-      distance = building.y - y
-
-      if  Math.abs(distance - @horizon) <= ( drawY ) + building.height
-        currentY = ( drawY ) + distance
+    # FIXME: drawY isn't really right, it's more like distance to horizon for one
+    # and distance to bottom for the other, but it's a safe approximation
+    for point in [ y + drawY .. y - drawY]
+      if @buildings[point]?
+        building = @buildings[point]
+        distance = building.y - y
+        currentY = drawY + distance
 
         # Lie a little bit, it's slightly past the horizon
         distanceToHorizon = drawY - @horizon + 15
@@ -142,7 +143,6 @@ class Map
 
         # Update size multiplier
         building.sizeMult = sizeMult
-
         building.draw @context, building.x, currentY
 
     @context.fillStyle = "red"
@@ -198,7 +198,7 @@ class Elle extends Entity
 
   canMoveForward: ->
     myBounds = @getBounds()
-    closeBuildings = @map.getCloseBuildings myBounds
+    closeBuildings = @map.getCloseBuildings myBounds.y2, @speed
     for building in closeBuildings
       bounds   = building.getBounds()
       distance = myBounds.y2 - bounds.y2
@@ -212,7 +212,7 @@ class Elle extends Entity
 
   canMoveBack: ->
     myBounds = @getBounds()
-    closeBuildings = @map.getCloseBuildings myBounds
+    closeBuildings = @map.getCloseBuildings myBounds.y2, @speed
     for building in closeBuildings
       bounds   = building.getBounds()
       distance = bounds.y2 - myBounds.y2
