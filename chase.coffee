@@ -43,6 +43,9 @@ class Chase
     # draw buildings behind
     @map.drawBuildings @elle.y, @elle.drawY, elleBounds.y2 + @elle.drawY, elleBounds.y2
 
+    # Draw elle ghost in front of buildings
+    @elle.drawGhost()
+
   play: =>
     return if @frameInterval
     @frameInterval =
@@ -268,6 +271,12 @@ class Elle extends Entity
     @context.textAlign = "left"
     @context.textBaseline = "top"
     @context.fillText '(' + bounds.x2 + ',' + bounds.y1 + ')', 610, 22
+
+  drawGhost: ->
+    position = @drawY - @jump.height
+    @context.fillStyle = 'rgba(249,158,0,.2)'
+    @context.fillRect @x, position, @width, @height
+
 
 window.onload = ->
   chase = new Chase window.document, window
