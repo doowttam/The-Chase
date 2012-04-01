@@ -30,7 +30,7 @@ class Chase
     # draw map
     @map.drawBG @elle.x, @elle.y, @elle.drawY
 
-    # draw building ahead
+    # draw buildings ahead
     # FIXME: drawY isn't really right, it's more like distance to horizon for one
     # and distance to bottom for the other, but it's a safe approximation
     @map.drawBuildings @elle.y, @elle.drawY, elleBounds.y2 - @elle.drawY, elleBounds.y2
@@ -59,8 +59,8 @@ class Chase
 
 class Entity
   #  x1, y1 ---- x2, y1
-  #  |
-  #  |
+  #  |                |
+  #  |                |
   #  x1, y2 ---- x2, y2
 
   constructor: ( @x, @y, @width, @height ) ->
@@ -254,6 +254,7 @@ class Elle extends Entity
     @context.fillStyle = "orange"
     @context.fillRect @x, position, @width, @height
 
+    # Draw the (x,y) in the top right corner
     bounds = @getBounds()
     @context.fillStyle = "black"
     @context.font = "bold 12px sans-serif"
