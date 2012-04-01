@@ -211,12 +211,12 @@ class Elle extends Entity
         @isJumping = false
         @goingUp   = true
 
-  canMoveForward: ->
+  canMove = (direction) ->
     myBounds = @getBounds()
     closeBuildings = @map.getCloseBuildings myBounds.y2, @speed
     for building in closeBuildings
       bounds   = building.getBounds()
-      distance = myBounds.y2 - bounds.y2
+      distance = (myBounds.y2 - bounds.y2) * direction
       if distance <= @speed and
          distance > 0 and
          myBounds.x1 < bounds.x2 and
@@ -225,19 +225,11 @@ class Elle extends Entity
         return false
     return true
 
+  canMoveForward: ->
+    canMove(1)
+
   canMoveBack: ->
-    myBounds = @getBounds()
-    closeBuildings = @map.getCloseBuildings myBounds.y2, @speed
-    for building in closeBuildings
-      bounds   = building.getBounds()
-      distance = bounds.y2 - myBounds.y2
-      if distance <= @speed and
-         distance > 0 and
-         myBounds.x1 < bounds.x2 and
-         myBounds.x2 > bounds.x1 and
-         myBounds.y2 - @jump.height > bounds.y1
-        return false
-    return true
+    canMove(-1)
 
   move: ->
     if @key.isDown(@key.codes.LEFT) and @x > 0
