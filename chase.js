@@ -1,6 +1,8 @@
 (function() {
-  var Building, Chase, Elle, Key, Map,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+  var Building, Chase, Elle, Entity, Key, Map,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
   Chase = (function() {
 
@@ -34,9 +36,15 @@
     };
 
     Chase.prototype.drawFrame = function() {
+      var elleBounds;
       this.resetCanvas();
       this.elle.move();
-      return this.elle.draw();
+      elleBounds = this.elle.getBounds();
+      this.map.drawBG(this.elle.x, this.elle.y, this.elle.drawY);
+      this.map.drawBuildings(this.elle.y, this.elle.drawY, elleBounds.y2 - this.elle.drawY, elleBounds.y2);
+      this.map.drawHorizon();
+      this.elle.draw();
+      return this.map.drawBuildings(this.elle.y, this.elle.drawY, elleBounds.y2 + this.elle.drawY, elleBounds.y2);
     };
 
     Chase.prototype.play = function() {
@@ -60,26 +68,73 @@
 
   })();
 
-  Building = (function() {
+  Entity = (function() {
 
-    function Building(x, y, width, height) {
+    function Entity(x, y, width, height) {
       this.x = x;
       this.y = y;
       this.width = width;
       this.height = height;
     }
 
-    Building.prototype.draw = function(context, drawX, drawY, sizeMult) {
-      var h, w;
-      w = this.width * sizeMult;
-      h = this.height * sizeMult * -1;
-      context.fillStyle = "black";
-      return context.fillRect(drawX, drawY, w, h);
+    Entity.prototype.getBounds = function() {
+      return {
+        x1: this.x,
+        y1: this.y,
+        x2: this.x + this.width,
+        y2: this.y + this.height
+      };
+    };
+
+    Entity.prototype.collidesWith = function(entity) {
+      var myBounds, theirBounds;
+      myBounds = this.getBounds();
+      theirBounds = entity.getBounds();
+      if (myBounds.x1 <= theirBounds.x2 && myBounds.x2 >= theirBounds.x1 && myBounds.y1 <= their.y2 && myBounds.y2 >= their.y1) {
+        return true;
+      }
+      return false;
+    };
+
+    return Entity;
+
+  })();
+
+  Building = (function(_super) {
+
+    __extends(Building, _super);
+
+    function Building() {
+      Building.__super__.constructor.apply(this, arguments);
+    }
+
+    Building.prototype.sizeMult = 1;
+
+    Building.prototype.effectiveWidth = function() {
+      return this.width * this.sizeMult;
+    };
+
+    Building.prototype.effectiveHeight = function() {
+      return this.height * this.sizeMult;
+    };
+
+    Building.prototype.getBounds = function() {
+      return {
+        x1: this.x,
+        y1: this.y - this.effectiveHeight(),
+        x2: this.x + this.effectiveWidth(),
+        y2: this.y
+      };
+    };
+
+    Building.prototype.draw = function(context, drawX, drawY) {
+      context.fillStyle = 'rgba(0,0,0,.9)';
+      return context.fillRect(drawX, drawY, this.effectiveWidth(), this.effectiveHeight() * -1);
     };
 
     return Building;
 
-  })();
+  })(Entity);
 
   Map = (function() {
 
@@ -94,11 +149,11 @@
 
     Map.prototype.horizon = 100;
 
-    Map.prototype.buildings = [];
+    Map.prototype.buildings = {};
 
-    Map.prototype.getHorizonY = function(y) {
+    Map.prototype.getHorizonY = function(y, drawY) {
       var distanceToHorizon;
-      distanceToHorizon = this.canvas.height / 2 - this.horizon;
+      distanceToHorizon = drawY - this.horizon;
       return y - distanceToHorizon;
     };
 
@@ -106,13 +161,22 @@
       var randX;
       if (Math.random() < 0.01) {
         randX = Math.ceil(Math.random() * this.canvas.width);
-        console.info("new building at " + randX + ", " + y);
-        return this.buildings.push(new Building(randX, y, 100, 30));
+        console.log("new building at " + randX + ", " + y);
+        return this.buildings[y] = new Building(randX, y, 100, 30);
       }
     };
 
-    Map.prototype.draw = function(x, y) {
-      var building, count, currentY, distance, horizonY, line, offset, sizeMult, _i, _len, _ref, _ref2, _ref3;
+    Map.prototype.getCloseBuildings = function(y2, speed) {
+      var point, _ref, _ref2, _results;
+      _results = [];
+      for (point = _ref = y2 - speed, _ref2 = y2 + speed; _ref <= _ref2 ? point <= _ref2 : point >= _ref2; _ref <= _ref2 ? point++ : point--) {
+        if (this.buildings[point] != null) _results.push(this.buildings[point]);
+      }
+      return _results;
+    };
+
+    Map.prototype.drawBG = function(x, y, drawY) {
+      var count, horizonY, line, offset, _ref, _ref2;
       offset = (y % this.lineGap) * -1;
       offset += this.horizon;
       count = 0;
@@ -126,25 +190,37 @@
       }
       if (this.furthestY > y) {
         this.furthestY = y;
-        horizonY = this.getHorizonY(y);
-        this.addNewBuildings(horizonY);
+        horizonY = this.getHorizonY(y, drawY);
+        return this.addNewBuildings(horizonY);
       }
-      _ref3 = this.buildings;
-      for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
-        building = _ref3[_i];
-        distance = building.y - y;
-        if (Math.abs(distance - this.horizon) <= (this.canvas.height / 2) + building.height) {
-          currentY = (this.canvas.height / 2) + distance;
-          if (distance > -this.horizon) {
-            sizeMult = (distance + this.horizon) / 200;
-          } else {
-            sizeMult = 0;
-          }
-          building.draw(this.context, building.x, currentY, sizeMult);
-        }
-      }
+    };
+
+    Map.prototype.drawHorizon = function() {
       this.context.fillStyle = "red";
       return this.context.fillRect(0, 0, this.canvas.width, this.horizon);
+    };
+
+    Map.prototype.drawBuildings = function(y, drawY, lower, upper) {
+      var building, currentY, distance, distanceToHorizon, point, sizeMult, _results;
+      _results = [];
+      for (point = lower; lower <= upper ? point <= upper : point >= upper; lower <= upper ? point++ : point--) {
+        if (this.buildings[point] != null) {
+          building = this.buildings[point];
+          distance = building.y - y;
+          currentY = drawY + distance;
+          distanceToHorizon = drawY - this.horizon + 15;
+          if (distance < 0) {
+            sizeMult = 1 - (1 / distanceToHorizon) * Math.abs(distance);
+          } else {
+            sizeMult = 1;
+          }
+          building.sizeMult = sizeMult;
+          _results.push(building.draw(this.context, building.x, currentY));
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
     };
 
     return Map;
@@ -165,7 +241,8 @@
       "LEFT": 37,
       "UP": 38,
       "RIGHT": 39,
-      "DOWN": 40
+      "DOWN": 40,
+      "SPACE": 32
     };
 
     Key.prototype.isDown = function(keyCode) {
@@ -184,40 +261,105 @@
 
   })();
 
-  Elle = (function() {
+  Elle = (function(_super) {
+
+    __extends(Elle, _super);
 
     function Elle(context, canvas, map, key) {
       this.context = context;
       this.canvas = canvas;
       this.map = map;
       this.key = key;
-      this.x = (this.canvas.width - this.size) / 2;
+      this.x = (this.canvas.width - this.width) / 2;
       this.y = 0;
+      this.drawY = (this.canvas.height + 50) / 2;
     }
 
-    Elle.prototype.size = 16;
+    Elle.prototype.width = 16;
+
+    Elle.prototype.height = 16;
+
+    Elle.prototype.speed = 1;
+
+    Elle.prototype.jump = {
+      isJumping: false,
+      goingUp: true,
+      height: 0,
+      maxHeight: 50,
+      stepHeight: function() {
+        if (this.height < this.maxHeight && this.goingUp) {
+          return this.height = this.height + 2;
+        } else if (this.height > 0) {
+          this.height = this.height - 2;
+          return this.goingUp = false;
+        } else {
+          this.height = 0;
+          this.isJumping = false;
+          return this.goingUp = true;
+        }
+      }
+    };
+
+    Elle.prototype.canMove = function(direction) {
+      var bounds, building, closeBuildings, distance, myBounds, _i, _len;
+      myBounds = this.getBounds();
+      closeBuildings = this.map.getCloseBuildings(myBounds.y2, this.speed);
+      for (_i = 0, _len = closeBuildings.length; _i < _len; _i++) {
+        building = closeBuildings[_i];
+        bounds = building.getBounds();
+        distance = (myBounds.y2 - bounds.y2) * direction;
+        if (distance <= this.speed && distance > 0 && myBounds.x1 < bounds.x2 && myBounds.x2 > bounds.x1 && myBounds.y2 - this.jump.height > bounds.y1) {
+          return false;
+        }
+      }
+      return true;
+    };
+
+    Elle.prototype.canMoveForward = function() {
+      return this.canMove(1);
+    };
+
+    Elle.prototype.canMoveBack = function() {
+      return this.canMove(-1);
+    };
 
     Elle.prototype.move = function() {
-      var topLeftX, topLeftY;
-      topLeftX = (this.canvas.width - this.size) / 2;
-      topLeftY = (this.canvas.height - this.size) / 2;
       if (this.key.isDown(this.key.codes.LEFT) && this.x > 0) this.x = this.x - 1;
-      if (this.key.isDown(this.key.codes.RIGHT) && this.x < this.canvas.width - this.size) {
+      if (this.key.isDown(this.key.codes.RIGHT) && this.x < this.canvas.width - this.width) {
         this.x = this.x + 1;
       }
-      if (this.key.isDown(this.key.codes.UP)) this.y = this.y - 1;
-      if (this.key.isDown(this.key.codes.DOWN)) return this.y = this.y + 1;
+      if (this.key.isDown(this.key.codes.UP) && this.canMoveForward()) {
+        this.y = this.y - 1;
+      }
+      if (this.key.isDown(this.key.codes.DOWN) && this.canMoveBack()) {
+        this.y = this.y + 1;
+      }
+      if (this.key.isDown(this.key.codes.SPACE) && !this.jump.isJumping) {
+        return this.jump.isJumping = true;
+      }
     };
 
     Elle.prototype.draw = function() {
-      this.map.draw(this.x, this.y);
+      var bounds, position;
+      if (this.jump.isJumping) {
+        this.jump.stepHeight();
+        this.context.fillStyle = "black";
+        this.context.fillRect(this.x + 2, this.drawY, this.width - 4, this.height - 4);
+      }
+      position = this.drawY - this.jump.height;
       this.context.fillStyle = "orange";
-      return this.context.fillRect(this.x, (this.canvas.height - this.size) / 2, this.size, this.size);
+      this.context.fillRect(this.x, position, this.width, this.height);
+      bounds = this.getBounds();
+      this.context.fillStyle = "black";
+      this.context.font = "bold 12px sans-serif";
+      this.context.textAlign = "left";
+      this.context.textBaseline = "top";
+      return this.context.fillText('(' + bounds.x2 + ',' + bounds.y1 + ')', 610, 22);
     };
 
     return Elle;
 
-  })();
+  })(Entity);
 
   window.onload = function() {
     var chase;
